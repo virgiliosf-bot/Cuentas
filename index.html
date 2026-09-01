@@ -35,7 +35,13 @@ input,select,textarea{font:inherit;color:inherit}
 @keyframes sube{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-.cab{padding:26px 0 4px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px}
+.cab{padding:26px 0 4px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:56px}
+.navmes{display:flex;align-items:center;gap:2px;margin-left:-10px}
+.navmes button{width:38px;height:38px;border-radius:11px;color:var(--tenue);font-family:var(--sf);
+  font-size:24px;font-weight:600;line-height:1;display:flex;align-items:center;justify-content:center}
+.navmes button:active{background:var(--capa)}
+.navmes button[disabled]{opacity:.25}
+.navmes .mes{padding:0 2px}
 .mes{font-family:var(--sf);font-size:15px;font-weight:500;color:var(--suave)}
 .mes b{color:var(--texto);font-weight:700}
 .ajustes{color:var(--suave);padding:12px;margin:-12px -8px -12px 0;border-radius:12px;
@@ -66,10 +72,37 @@ input,select,textarea{font:inherit;color:inherit}
 .mv .i{font-family:var(--sf);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .vacio{text-align:center;color:var(--tenue);padding:50px 20px;font-size:14.5px;line-height:1.7}
 
+/* ── resumen con filtros ── */
+.filtros{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 10px}
+.filtros select{background:var(--capa);border:1px solid var(--linea);border-radius:12px;padding:11px 12px;
+  font-size:14.5px;font-weight:500;outline:none;width:100%;-webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238AA3B0' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center}
+.cifras{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.tarj{background:var(--capa);border:1px solid var(--linea);border-radius:15px;padding:13px 14px}
+.tarj .et{font-size:12px;color:var(--suave);margin-bottom:3px}
+.tarj .va{font-family:var(--sf);font-size:22px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tarj.ancha{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between}
+.tarj.ancha .va{font-size:26px}
+.graf{display:flex;align-items:stretch;gap:3px;height:108px;margin:2px 0 6px;position:relative}
+.graf .col{flex:1;position:relative;min-width:0;border-radius:4px}
+.graf .col:active{background:var(--capa)}
+.graf .col b{position:absolute;left:12%;right:12%;border-radius:3px;display:block}
+.graf .base{position:absolute;left:0;right:0;height:1px;background:var(--linea)}
+.pies{display:flex;gap:3px;margin-bottom:18px}
+.pies span{flex:1;text-align:center;font-size:9.5px;color:var(--tenue);min-width:0;overflow:hidden}
+.cat{display:grid;grid-template-columns:1fr auto;gap:3px 10px;padding:9px 2px;border-bottom:1px solid var(--linea)}
+.cat:active{background:var(--capa)}
+.cat .n{font-size:14.5px}
+.cat .v{font-family:var(--sf);font-weight:700;font-size:14.5px;font-variant-numeric:tabular-nums}
+.cat .p{grid-column:1/-1;height:5px;border-radius:99px;background:#0E2A38;overflow:hidden}
+.cat .p i{display:block;height:100%;border-radius:99px}
+.nada{color:var(--tenue);font-size:14px;text-align:center;padding:34px 10px}
+
 .tab{position:fixed;left:0;right:0;bottom:0;z-index:40;background:linear-gradient(to top,var(--fondo) 62%,transparent);
   padding:12px 20px calc(14px + var(--safe-b));display:flex;justify-content:center;gap:10px;max-width:520px;margin:0 auto}
-.tab button{flex:1;padding:14px 0;border-radius:14px;background:var(--capa);border:1px solid var(--linea);
-  font-size:14px;font-weight:600;color:var(--suave)}
+.tab button{flex:1;padding:13px 0;border-radius:14px;background:var(--capa);border:1px solid var(--linea);
+  font-size:13px;font-weight:600;color:var(--suave);min-width:0;white-space:nowrap}
 .tab button.act{color:var(--texto)}
 .mas{flex:0 0 62px!important;background:var(--verde)!important;border:0!important;color:#08222E!important;
   font-family:var(--sf);font-size:30px!important;font-weight:700;line-height:1;padding:0!important;height:52px}
@@ -155,7 +188,11 @@ input,select,textarea{font:inherit;color:inherit}
 <div id="app" class="oculto">
   <section class="vista on" id="v-mes">
     <div class="cab">
-      <div class="mes" id="etMes"></div>
+      <div class="navmes">
+        <button onclick="mueveMes(-1)" aria-label="Mes anterior">‹</button>
+        <div class="mes" id="etMes"></div>
+        <button onclick="mueveMes(1)" id="btnSig" aria-label="Mes siguiente">›</button>
+      </div>
       <button class="ajustes" onclick="ir('aj')" aria-label="Ajustes">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
       </button>
@@ -164,6 +201,20 @@ input,select,textarea{font:inherit;color:inherit}
     <div class="delta" id="elDelta"></div>
     <div class="plan" id="elPlan"></div>
     <div id="elHoy"></div>
+  </section>
+
+  <section class="vista" id="v-resumen">
+    <div class="cab"><div class="mes"><b>Resumen</b></div>
+      <button class="ajustes" onclick="ir('aj')" aria-label="Ajustes">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
+    <div class="filtros">
+      <select id="fAnio" onchange="pintaResumen()"></select>
+      <select id="fMes" onchange="pintaResumen()"></select>
+    </div>
+    <div class="chips" id="fBloque"></div>
+    <div id="rCifras"></div>
+    <div id="rGrafico"></div>
+    <div id="rCats"></div>
   </section>
 
   <section class="vista" id="v-lista">
@@ -216,9 +267,10 @@ input,select,textarea{font:inherit;color:inherit}
 </div>
 
 <div class="tab oculto" id="barra">
-  <button id="tb-mes" class="act" onclick="ir('mes')">Este mes</button>
+  <button id="tb-mes" class="act" onclick="ir('mes')">Mes</button>
+  <button id="tb-resumen" onclick="ir('resumen')">Resumen</button>
   <button class="mas" onclick="abre()" aria-label="Añadir movimiento">+</button>
-  <button id="tb-lista" onclick="ir('lista')">Movimientos</button>
+  <button id="tb-lista" onclick="ir('lista')">Apuntes</button>
 </div>
 
 <div class="velo" id="velo" onclick="cierra()"></div>
@@ -268,6 +320,7 @@ const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto'
 let movs = [], aj = {...AJ_DEF}, yo = {quien:'Ambos', clave:'', ultimoExport:null};
 let editando = null, signo = -1, catSel = 'Comida', quienSel = 'Ambos', buffer = '';
 let saldoPintado = null, sincronizando = false, ultimoOk = null, fallo = null;
+let mesVista = null, fBloque = 'todos';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 const activos = () => movs.filter(m => !m.del);
@@ -375,7 +428,7 @@ async function sincroniza(empujar){
     if(empujar || !remoto || JSON.stringify(remoto.movs||[]) !== JSON.stringify(movs)) await subeNube(payload, false);
     guardaLocal();
     ultimoOk = new Date(); fallo = null;
-    if(antes !== JSON.stringify(movs)){ pintaMes(); pintaLista(); }
+    if(antes !== JSON.stringify(movs)){ pintaMes(); pintaLista(); if(document.getElementById('v-resumen').classList.contains('on')) pintaResumen(); }
   }catch(e){
     fallo = String(e.message||e);
     console.error(e);
@@ -430,13 +483,26 @@ async function entra(){
 function ir(v){
   document.querySelectorAll('.vista').forEach(s => s.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
-  document.getElementById('tb-mes').classList.toggle('act', v==='mes');
-  document.getElementById('tb-lista').classList.toggle('act', v==='lista');
+  for(const t of ['mes','resumen','lista']) document.getElementById('tb-'+t).classList.toggle('act', v===t);
   window.scrollTo(0,0);
-  if(v==='mes') pintaMes(); if(v==='lista') pintaLista(); if(v==='aj') pintaAjustes();
+  if(v==='mes') pintaMes();
+  if(v==='resumen') pintaResumen();
+  if(v==='lista') pintaLista();
+  if(v==='aj') pintaAjustes();
 }
+const mesActual = () => clave(hoyISO());
+function mueveMes(n){
+  const [y,m] = (mesVista || mesActual()).split('-').map(Number);
+  const d = new Date(y, m-1+n, 1);
+  const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  if(k > mesActual()) return;
+  mesVista = (k === mesActual()) ? null : k;
+  saldoPintado = null;
+  pintaMes();
+}
+function vePorMes(k){ mesVista = (k===mesActual()) ? null : k; saldoPintado = null; ir('mes'); }
 function pintaMes(){
-  const k = clave(hoyISO());
+  const k = mesVista || mesActual();
   const mes = activos().filter(m => clave(m.fecha) === k);
   const suma = f => mes.filter(f).reduce((a,m)=>a+m.importe,0);
   const ing = suma(m => m.importe > 0);
@@ -444,15 +510,18 @@ function pintaMes(){
   const est = -suma(m => BLOQUE[m.categoria]==='Estilo de vida');
   const apo = -suma(m => BLOQUE[m.categoria]==='Ahorro e inversión');
   const neto = mes.reduce((a,m)=>a+m.importe,0);
-  const saldo = aj.saldo + activos().reduce((a,m)=>a+m.importe,0);
+  const saldo = aj.saldo + activos().filter(m => clave(m.fecha) <= k).reduce((a,m)=>a+m.importe,0);
   const [y,mm] = k.split('-');
   document.getElementById('etMes').innerHTML = '<b>'+MESES[+mm-1]+'</b> '+y;
+  document.getElementById('btnSig').disabled = (k >= mesActual());
   animaSaldo(saldo);
+  const esteMes = (k === mesActual());
   document.getElementById('elDelta').innerHTML =
-    (mes.length ? '<i class="'+(neto>=0?'up':'down')+'">'+(neto>=0?'▲ ':'▼ ')+eur0(Math.abs(neto))+'</i> este mes · '+mes.length+' apunte'+(mes.length===1?'':'s')
-                : 'Sin movimientos todavía este mes') +
-    ' <span class="enlinea" id="estado"><span class="punto"></span>Al día en los dos teléfonos</span>';
-  marcaEstado(ultimoOk !== null);
+    (mes.length ? '<i class="'+(neto>=0?'up':'down')+'">'+(neto>=0?'▲ ':'▼ ')+eur0(Math.abs(neto))+'</i> '
+                  + (esteMes?'este mes':'ese mes') + ' · '+mes.length+' apunte'+(mes.length===1?'':'s')
+                : 'Sin movimientos en ' + MESES[+mm-1]) +
+    (esteMes ? ' <span class="enlinea" id="estado"><span class="punto"></span></span>' : '');
+  marcaEstado();
 
   const base = ing > 0 ? ing : 0;
   const barra = (et, val, pct, color, esAhorro) => {
@@ -466,14 +535,17 @@ function pintaMes(){
     ? barra('Necesidades', nec, aj.nec, 'var(--coral)', false)
       + barra('Estilo de vida', est, aj.est, 'var(--ambar)', false)
       + barra('Ahorro apartado', apo, aj.aho, 'var(--verde)', true)
-      + `<div class="fila" style="border-top:1px solid var(--linea);padding-top:11px"><div class="et">Ingresos del mes</div><div class="ci up">${eur0(ing)}</div></div>`
-    : '<div style="color:var(--tenue);font-size:13.5px;text-align:center;padding:6px 0">Cuando entre la primera nómina del mes verás aquí el reparto 50 / 15 / 35.</div>';
+      + `<div class="fila" style="border-top:1px solid var(--linea);padding-top:11px"><div class="et">Ingresos ${esteMes?'del mes':'de ese mes'}</div><div class="ci up">${eur0(ing)}</div></div>`
+    : '<div style="color:var(--tenue);font-size:13.5px;text-align:center;padding:6px 0">Sin ingresos apuntados, así que todavía no hay reparto que enseñar.</div>';
 
-  const hoy = activos().filter(m => m.fecha === hoyISO())
-    .sort((a,b) => b.upd.localeCompare(a.upd));
-  document.getElementById('elHoy').innerHTML = hoy.length
-    ? '<div class="dia">Hoy</div>' + hoy.map(ficha).join('')
-    : '<div class="vacio">Nada apuntado hoy.<br>Toca el + en cuanto pagues algo.</div>';
+  const orden = mes.slice().sort((a,b) => b.fecha.localeCompare(a.fecha) || b.upd.localeCompare(a.upd));
+  let html = '', ult = '';
+  for(const m of orden){
+    if(m.fecha !== ult){ html += '<div class="dia">'+etiqueta(m.fecha)+'</div>'; ult = m.fecha; }
+    html += ficha(m);
+  }
+  document.getElementById('elHoy').innerHTML = html ||
+    '<div class="vacio">' + (esteMes ? 'Nada apuntado este mes.<br>Toca el + en cuanto pagues algo.' : 'Ningún apunte en '+MESES[+mm-1]+'.') + '</div>';
 }
 function animaSaldo(v){
   const el = document.getElementById('elSaldo');
@@ -507,6 +579,100 @@ function etiqueta(f){
   const ayer = new Date(Date.now()-864e5-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
   if(f===ayer) return 'Ayer';
   return new Date(f+'T12:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+}
+
+
+/* ══════════ resumen con filtros ══════════ */
+const BLOQUES = ['Necesidades','Estilo de vida','Ahorro e inversión','Ingreso'];
+
+function rellenaFiltros(){
+  const anios = [...new Set(activos().map(m => m.fecha.slice(0,4)))].sort().reverse();
+  const fa = document.getElementById('fAnio'), fm = document.getElementById('fMes');
+  const prevA = fa.value, prevM = fm.value;
+  fa.innerHTML = '<option value="">Todos los años</option>' +
+    anios.map(a => `<option value="${a}">${a}</option>`).join('');
+  fm.innerHTML = '<option value="">Todo el año</option>' +
+    MESES.map((n,i) => `<option value="${String(i+1).padStart(2,'0')}">${n[0].toUpperCase()+n.slice(1)}</option>`).join('');
+  fa.value = prevA !== '' && [...fa.options].some(o=>o.value===prevA) ? prevA : (anios[0] || '');
+  fm.value = prevM || '';
+  document.getElementById('fBloque').innerHTML =
+    ['todos', ...BLOQUES].map(b => `<button class="chip${fBloque===b?' on':''}" onclick="setBloque('${b}')">${b==='todos'?'Todo':b}</button>`).join('');
+}
+function setBloque(b){ fBloque = b; rellenaFiltros(); pintaResumen(); }
+
+function pintaResumen(){
+  if(!document.getElementById('fAnio').options.length) rellenaFiltros();
+  const y = document.getElementById('fAnio').value, mo = document.getElementById('fMes').value;
+  let l = activos();
+  if(y) l = l.filter(m => m.fecha.slice(0,4) === y);
+  if(mo) l = l.filter(m => m.fecha.slice(5,7) === mo);
+
+  const suma = (arr,f) => arr.filter(f).reduce((a,m)=>a+m.importe,0);
+  const ing = suma(l, m => BLOQUE[m.categoria]==='Ingreso');
+  const gas = -suma(l, m => ['Necesidades','Estilo de vida'].includes(BLOQUE[m.categoria]));
+  const apo = -suma(l, m => BLOQUE[m.categoria]==='Ahorro e inversión');
+  const aho = ing - gas;
+  const tasa = ing > 0 ? aho/ing : 0;
+  const nMeses = new Set(l.map(m => clave(m.fecha))).size || 1;
+
+  document.getElementById('rCifras').innerHTML = !l.length ? '' : `
+    <div class="cifras">
+      <div class="tarj ancha"><div><div class="et">Ahorro del periodo</div>
+        <div class="va" style="color:${aho>=0?'var(--verde)':'var(--coral)'}">${eur0(aho)}</div></div>
+        <div class="va" style="font-size:20px;color:${tasa>=aj.aho/100?'var(--verde)':'var(--ambar)'}">${(tasa*100).toFixed(1).replace('.',',')}%</div></div>
+      <div class="tarj"><div class="et">Ingresos</div><div class="va up">${eur0(ing)}</div></div>
+      <div class="tarj"><div class="et">Gastos</div><div class="va">${eur0(gas)}</div></div>
+      <div class="tarj"><div class="et">Apartado a ahorro</div><div class="va">${eur0(apo)}</div></div>
+      <div class="tarj"><div class="et">Gasto medio al mes</div><div class="va">${eur0(gas/nMeses)}</div></div>
+    </div>`;
+
+  // ── evolución mes a mes ──
+  const claves = [...new Set(activos().map(m => clave(m.fecha)))].sort();
+  let ventana = y ? claves.filter(k => k.slice(0,4)===y) : claves.slice(-12);
+  if(mo) ventana = ventana.filter(k => k.slice(5,7)===mo);
+  const serie = ventana.map(k => {
+    const mm = activos().filter(x => clave(x.fecha)===k);
+    return {k, v: mm.reduce((a,x)=>a+x.importe,0)};
+  });
+  const g = document.getElementById('rGrafico');
+  if(serie.length < 2){ g.innerHTML = ''; }
+  else{
+    const pos = Math.max(0, ...serie.map(s=>s.v)), neg = Math.min(0, ...serie.map(s=>s.v));
+    const rango = (pos - neg) || 1, basePct = pos/rango*100;
+    g.innerHTML = `<div class="et" style="font-size:12px;color:var(--suave);margin:2px 0 7px">Ahorro de cada mes</div>
+      <div class="graf"><div class="base" style="top:${basePct}%"></div>` +
+      serie.map(s => {
+        const alto = Math.abs(s.v)/rango*100;
+        const est = s.v >= 0 ? `bottom:${100-basePct}%;height:${alto}%` : `top:${basePct}%;height:${alto}%`;
+        return `<div class="col" onclick="vePorMes('${s.k}')" title="${s.k}">
+          <b style="${est};background:${s.v>=0?'var(--verde)':'var(--coral)'}"></b></div>`;
+      }).join('') + '</div><div class="pies">' +
+      serie.map(s => `<span>${MESES[+s.k.slice(5,7)-1].slice(0,3)}</span>`).join('') + '</div>';
+  }
+
+  // ── desglose por categoría ──
+  const lb = fBloque==='todos' ? l : l.filter(m => BLOQUE[m.categoria]===fBloque);
+  const acum = {};
+  for(const m of lb){
+    if(BLOQUE[m.categoria]==='Ingreso' && fBloque==='todos') continue;
+    acum[m.categoria] = (acum[m.categoria]||0) + Math.abs(m.importe);
+  }
+  const pares = Object.entries(acum).sort((a,b)=>b[1]-a[1]);
+  const top = pares.length ? pares[0][1] : 1;
+  const total = pares.reduce((a,p)=>a+p[1],0) || 1;
+  const COLOR = {'Necesidades':'var(--coral)','Estilo de vida':'var(--ambar)',
+                 'Ahorro e inversión':'var(--verde)','Ingreso':'var(--verde)'};
+  document.getElementById('rCats').innerHTML = !pares.length
+    ? '<div class="nada">Ningún movimiento con estos filtros.</div>'
+    : '<div class="et" style="font-size:12px;color:var(--suave);margin:6px 0 2px">Por categoría</div>' +
+      pares.map(([c,v]) => `<div class="cat" onclick="veCategoria('${c}')">
+        <div class="n">${c}</div>
+        <div class="v">${eur0(v)} <span style="color:var(--tenue);font-weight:500;font-size:12.5px">${(v/total*100).toFixed(0)}%</span></div>
+        <div class="p"><i style="width:${v/top*100}%;background:${COLOR[BLOQUE[c]]||'var(--suave)'}"></i></div></div>`).join('');
+}
+function veCategoria(c){
+  document.getElementById('busca').value = c;
+  ir('lista');
 }
 
 /* ══════════ entrada ══════════ */
