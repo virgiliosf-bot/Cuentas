@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cuentas de casa</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0F2430">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cuentas">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230F2430'/%3E%3Cpath d='M38 118h104M38 92h104M38 66h104' stroke='%2324475A' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M56 128V52m34 76V72m34 56V88' stroke='%234FBF95' stroke-width='13' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fondo:#0F2430; --capa:#17323F; --capa2:#1D3E4E; --linea:#27495B;
+  --texto:#E9EFF1; --suave:#8AA3B0; --tenue:#5D7A88;
+  --verde:#4FBF95; --coral:#E8705B; --ambar:#E2A84B;
+  --sf:'Bricolage Grotesque',ui-sans-serif,system-ui,sans-serif;
+  --ui:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--fondo);color:var(--texto);font-family:var(--ui);font-size:16px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.num{font-family:var(--sf);font-variant-numeric:tabular-nums}
+#app{max-width:520px;margin:0 auto;padding:0 20px calc(108px + var(--safe-b));min-height:100vh}
+.vista{display:none}
+.vista.on{display:block;animation:sube .22s ease both}
+@keyframes sube{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.cab{padding:26px 0 4px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.mes{font-family:var(--sf);font-size:15px;font-weight:500;color:var(--suave)}
+.mes b{color:var(--texto);font-weight:700}
+.ajustes{color:var(--tenue);padding:6px;margin:-6px;border-radius:10px}
+.ajustes:active{background:var(--capa)}
+.saldo{font-family:var(--sf);font-size:clamp(44px,15vw,62px);font-weight:800;letter-spacing:-.035em;line-height:1;margin:6px 0 0}
+.saldo small{font-size:.42em;font-weight:700;color:var(--suave);margin-left:.12em}
+.delta{font-size:13.5px;color:var(--suave);margin:9px 0 20px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.delta i{font-style:normal;font-weight:600;font-family:var(--sf)}
+.up{color:var(--verde)} .down{color:var(--coral)}
+.enlinea{font-size:12px;color:var(--tenue);display:inline-flex;align-items:center;gap:5px}
+.punto{width:6px;height:6px;border-radius:99px;background:var(--verde);flex:0 0 auto}
+.punto.malo{background:var(--ambar)}
+
+.plan{display:grid;gap:13px;padding:17px;background:var(--capa);border-radius:16px;border:1px solid var(--linea)}
+.fila{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline}
+.fila .et{font-size:13px;color:var(--suave)}
+.fila .ci{font-size:13.5px;font-family:var(--sf);font-weight:700;font-variant-numeric:tabular-nums}
+.barra{grid-column:1/-1;height:6px;border-radius:99px;background:#0E2A38;overflow:hidden;position:relative}
+.barra span{position:absolute;inset:0 auto 0 0;border-radius:99px;transition:width .5s cubic-bezier(.2,.7,.3,1)}
+.tope{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--tenue);border-radius:2px}
+
+.dia{font-size:12.5px;color:var(--tenue);font-weight:600;margin:26px 0 8px}
+.mv{display:grid;grid-template-columns:1fr auto;align-items:center;gap:14px;padding:11px 2px;border-bottom:1px solid var(--linea)}
+.mv:active{background:var(--capa)}
+.mv .c{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mv .s{font-size:12.5px;color:var(--tenue);margin-top:1px}
+.mv .i{font-family:var(--sf);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vacio{text-align:center;color:var(--tenue);padding:50px 20px;font-size:14.5px;line-height:1.7}
+
+.tab{position:fixed;left:0;right:0;bottom:0;z-index:40;background:linear-gradient(to top,var(--fondo) 62%,transparent);
+  padding:12px 20px calc(14px + var(--safe-b));display:flex;justify-content:center;gap:10px;max-width:520px;margin:0 auto}
+.tab button{flex:1;padding:14px 0;border-radius:14px;background:var(--capa);border:1px solid var(--linea);
+  font-size:14px;font-weight:600;color:var(--suave)}
+.tab button.act{color:var(--texto)}
+.mas{flex:0 0 62px!important;background:var(--verde)!important;border:0!important;color:#08222E!important;
+  font-family:var(--sf);font-size:30px!important;font-weight:700;line-height:1;padding:0!important;height:52px}
+.mas:active{transform:scale(.94)}
+
+.velo{position:fixed;inset:0;background:rgba(6,20,28,.72);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.velo.on{opacity:1;pointer-events:auto}
+.hoja{position:fixed;left:0;right:0;bottom:0;z-index:60;max-width:520px;margin:0 auto;background:var(--capa);
+  border-radius:22px 22px 0 0;border-top:1px solid var(--linea);padding:8px 18px calc(14px + var(--safe-b));
+  transform:translateY(102%);transition:transform .26s cubic-bezier(.2,.8,.25,1);max-height:96vh;overflow-y:auto}
+.hoja.on{transform:none}
+.asa{width:38px;height:4px;border-radius:99px;background:var(--linea);margin:6px auto 10px}
+.imp{font-family:var(--sf);font-size:38px;font-weight:800;text-align:center;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;margin:0 0 2px;min-height:44px}
+.signo{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+.signo button{padding:7px 16px;border-radius:99px;font-size:13px;font-weight:600;color:var(--tenue);border:1px solid var(--linea)}
+.signo button.on{color:#08222E;background:var(--coral);border-color:var(--coral)}
+.signo button.on.ing{background:var(--verde)}
+.tecl{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:4px 0 11px}
+.tecl button{padding:11px 0;border-radius:12px;background:var(--capa2);font-family:var(--sf);font-size:21px;font-weight:600}
+.tecl button:active{background:var(--linea)}
+.chips{display:flex;flex-wrap:nowrap;gap:7px;margin-bottom:11px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:9px 14px;border-radius:11px;background:var(--capa2);font-size:13.5px;font-weight:500;
+  color:var(--suave);border:1px solid transparent;white-space:nowrap}
+.chip.on{background:var(--texto);color:#0F2430;font-weight:600}
+.quien{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:9px}
+.quien button{padding:10px 0;border-radius:11px;background:var(--capa2);font-size:13.5px;color:var(--suave)}
+.quien button.on{background:var(--texto);color:#0F2430;font-weight:600}
+.campo{width:100%;padding:11px 13px;border-radius:12px;background:var(--capa2);border:1px solid transparent;
+  font-size:15px;margin-bottom:9px;outline:none}
+.campo:focus{border-color:var(--linea)}
+.campo::placeholder{color:var(--tenue)}
+.dupla{display:grid;grid-template-columns:1fr 138px;gap:8px}
+.guardar{width:100%;padding:15px;border-radius:14px;background:var(--verde);color:#08222E;font-weight:700;font-size:16px;
+  position:sticky;bottom:0}
+.guardar[disabled]{opacity:.35}
+.borrar{width:100%;padding:12px;border-radius:14px;color:var(--coral);font-size:14px;font-weight:600;margin-top:6px}
+
+.sec{margin:24px 0 10px;font-family:var(--sf);font-size:16px;font-weight:700}
+.aj{display:grid;grid-template-columns:1fr 108px;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--linea)}
+.aj label{font-size:14px}
+.aj .h{font-size:12px;color:var(--tenue);grid-column:1/-1;margin-top:-6px;line-height:1.55}
+.aj input,.aj select{text-align:right;background:var(--capa);border:1px solid var(--linea);border-radius:10px;padding:9px 11px;
+  width:100%;font-family:var(--sf);font-weight:600;outline:none}
+.accion{width:100%;padding:14px 17px;border-radius:13px;background:var(--capa);border:1px solid var(--linea);
+  font-size:14.5px;font-weight:600;margin-top:9px;text-align:left}
+.accion span{color:var(--tenue);font-weight:400;font-size:13px;display:block;margin-top:2px}
+.aviso{position:fixed;left:50%;bottom:calc(96px + var(--safe-b));transform:translate(-50%,14px);z-index:70;
+  background:var(--texto);color:#0F2430;padding:11px 18px;border-radius:12px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.24s;max-width:88vw;text-align:center}
+.aviso.on{opacity:1;transform:translate(-50%,0)}
+
+.portada{position:fixed;inset:0;z-index:80;background:var(--fondo);display:flex;align-items:center;justify-content:center;padding:24px}
+.portada .caja{max-width:340px;width:100%}
+.portada h1{font-family:var(--sf);font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0 0 6px;line-height:1.12}
+.portada p{color:var(--suave);font-size:14.5px;margin:0 0 22px;line-height:1.6}
+.portada .campo{margin-bottom:9px}
+.oculto{display:none!important}
+#csv{width:100%;height:150px;border-radius:12px;background:var(--capa);border:1px solid var(--linea);padding:11px;
+  font-family:ui-monospace,monospace;font-size:11.5px;margin-top:10px;resize:vertical}
+</style>
+</head>
+<body>
+
+<div class="portada" id="portada">
+  <div class="caja">
+    <h1 id="pTitulo">Cuentas de casa</h1>
+    <p id="pTexto">Una libreta para los dos. Dime quién usa este teléfono.</p>
+    <div id="pQuien" class="quien" style="margin-bottom:14px">
+      <button onclick="eligeYo('Villo')" data-q="Villo">Villo</button>
+      <button onclick="eligeYo('Sandra')" data-q="Sandra">Sandra</button>
+      <button onclick="eligeYo('Ambos')" data-q="Ambos">Otro</button>
+    </div>
+    <input class="campo" id="pClave" type="password" placeholder="Palabra clave" autocomplete="off">
+    <p style="font-size:12.5px;color:var(--tenue);margin:-2px 0 14px">
+      Cifra los apuntes antes de subirlos a GitHub. Tiene que ser la misma en los dos teléfonos. Si la perdéis, no hay forma de recuperar la libreta.</p>
+    <button class="guardar" id="pEntrar" onclick="entra()">Empezar</button>
+  </div>
+</div>
+
+<div id="app" class="oculto">
+  <section class="vista on" id="v-mes">
+    <div class="cab">
+      <div class="mes" id="etMes"></div>
+      <button class="ajustes" onclick="ir('aj')" aria-label="Ajustes">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+    <div class="saldo num" id="elSaldo">—</div>
+    <div class="delta" id="elDelta"></div>
+    <div class="plan" id="elPlan"></div>
+    <div id="elHoy"></div>
+  </section>
+
+  <section class="vista" id="v-lista">
+    <div class="cab"><div class="mes"><b>Movimientos</b></div>
+      <button class="ajustes" onclick="ir('aj')">⋯</button></div>
+    <input class="campo" id="busca" placeholder="Buscar por concepto o categoría" oninput="pintaLista()">
+    <div id="elLista"></div>
+  </section>
+
+  <section class="vista" id="v-aj">
+    <div class="cab"><div class="mes"><b>Ajustes</b></div></div>
+
+    <div class="sec">Este teléfono</div>
+    <div class="aj"><label>Quién lo usa</label>
+      <select id="cfgYo"><option>Villo</option><option>Sandra</option><option>Ambos</option></select></div>
+
+    <div class="sec">Sincronizar entre los dos móviles</div>
+    <div class="aj"><div class="h">Los apuntes se guardan cifrados en tu repositorio de GitHub. Rellena lo mismo en los dos teléfonos.</div></div>
+    <input class="campo" id="cfgRepo" placeholder="usuario/repositorio" autocapitalize="off" autocorrect="off">
+    <input class="campo" id="cfgToken" type="password" placeholder="Token de GitHub (ghp_… o github_pat_…)" autocapitalize="off" autocorrect="off">
+    <button class="accion" onclick="pruebaNube()">Probar la conexión <span id="hSync"></span></button>
+
+    <div class="sec">Punto de partida</div>
+    <div class="aj"><label>Saldo del que arranca</label><input id="cfgSaldo" inputmode="decimal"></div>
+    <div class="aj"><div class="h">El saldo que traes del Excel. La libreta suma y resta desde ahí.</div></div>
+
+    <div class="sec">Reparto objetivo</div>
+    <div class="aj"><label>Necesidades</label><input id="cfgNec" inputmode="decimal"></div>
+    <div class="aj"><label>Estilo de vida</label><input id="cfgEst" inputmode="decimal"></div>
+    <div class="aj"><label>Ahorro e inversión</label><input id="cfgAho" inputmode="decimal"></div>
+    <div class="aj"><div class="h" id="cfgSuma"></div></div>
+
+    <div class="sec">Llevarlo al Excel</div>
+    <button class="accion" onclick="prepara(false)">Preparar lo nuevo <span id="ctNuevo"></span></button>
+    <button class="accion" onclick="prepara(true)">Preparar todo <span id="ctTodo"></span></button>
+    <div id="zonaCsv" class="oculto">
+      <textarea id="csv" readonly onclick="this.select()"></textarea>
+      <button class="accion" onclick="copia()">Copiar al portapapeles
+        <span>Pégalo en la primera fila vacía de la hoja Movimientos</span></button>
+      <button class="accion" onclick="marcaExportado()">Marcar como exportado
+        <span>Para que la próxima vez solo salga lo nuevo</span></button>
+    </div>
+
+    <div class="sec">Cuidado</div>
+    <button class="accion" style="color:var(--coral)" onclick="vacia()">Vaciar la libreta
+      <span>Borra los apuntes de los dos teléfonos</span></button>
+    <div style="height:30px"></div>
+  </section>
+</div>
+
+<div class="tab oculto" id="barra">
+  <button id="tb-mes" class="act" onclick="ir('mes')">Este mes</button>
+  <button class="mas" onclick="abre()" aria-label="Añadir movimiento">+</button>
+  <button id="tb-lista" onclick="ir('lista')">Movimientos</button>
+</div>
+
+<div class="velo" id="velo" onclick="cierra()"></div>
+<div class="hoja" id="hoja">
+  <div class="asa"></div>
+  <div class="imp num" id="hImp">0,00 €</div>
+  <div class="signo">
+    <button id="bGasto" class="on" onclick="setSigno(-1)">Gasto</button>
+    <button id="bIng" onclick="setSigno(1)">Ingreso</button>
+  </div>
+  <div class="tecl">
+    <button onclick="tec('1')">1</button><button onclick="tec('2')">2</button><button onclick="tec('3')">3</button>
+    <button onclick="tec('4')">4</button><button onclick="tec('5')">5</button><button onclick="tec('6')">6</button>
+    <button onclick="tec('7')">7</button><button onclick="tec('8')">8</button><button onclick="tec('9')">9</button>
+    <button onclick="tec('00')">00</button><button onclick="tec('0')">0</button><button onclick="tec('b')">⌫</button>
+  </div>
+  <div class="chips" id="hChips"></div>
+  <div class="quien">
+    <button onclick="setQuien('Ambos')" data-q="Ambos">Ambos</button>
+    <button onclick="setQuien('Sandra')" data-q="Sandra">Sandra</button>
+    <button onclick="setQuien('Villo')" data-q="Villo">Villo</button>
+  </div>
+  <div class="dupla">
+    <input class="campo" id="hDesc" placeholder="Concepto (opcional)" autocomplete="off">
+    <input class="campo" id="hFecha" type="date">
+  </div>
+  <button class="guardar" id="hGuardar" onclick="guarda()">Guardar</button>
+  <button class="borrar" id="hBorrar" style="display:none" onclick="elimina()">Borrar este movimiento</button>
+</div>
+
+<div class="aviso" id="aviso"></div>
+
+<script>
+/* ══════════ modelo ══════════ */
+const CATS = [
+  ['Comida','Necesidades'],['Recibos','Necesidades'],['Gasolina','Necesidades'],
+  ['Otros','Estilo de vida'],['Regalos','Estilo de vida'],['Ropa y complementos','Estilo de vida'],
+  ['Hogar','Necesidades'],['Viajes','Estilo de vida'],['Coche','Necesidades'],
+  ['Formación','Necesidades'],['Seguros','Necesidades'],['Ingreso','Ingreso'],
+  ['Aportación inversión','Ahorro e inversión'],['Aportación proyecto','Ahorro e inversión'],
+  ['Aportación colchón','Ahorro e inversión']
+];
+const BLOQUE = Object.fromEntries(CATS);
+const AJ_DEF = {saldo:74487.83, nec:50, est:15, aho:35};
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+let movs = [], aj = {...AJ_DEF}, yo = {quien:'Ambos', clave:'', ultimoExport:null};
+let editando = null, signo = -1, catSel = 'Comida', quienSel = 'Ambos', buffer = '';
+let saldoPintado = null, sincronizando = false, ultimoOk = null, fallo = null;
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+const activos = () => movs.filter(m => !m.del);
+const eur = n => (n<0?'−':'') + Math.abs(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+const eur0 = n => (n<0?'−':'') + Math.round(Math.abs(n)).toLocaleString('es-ES') + ' €';
+const hoyISO = () => new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const clave = f => f.slice(0,7);
+const esc = s => (s||'').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+function toast(t){ const a=document.getElementById('aviso'); a.textContent=t; a.classList.add('on');
+  clearTimeout(a._t); a._t=setTimeout(()=>a.classList.remove('on'),2300); }
+
+/* ══════════ cifrado opcional ══════════ */
+const b64 = b => btoa(String.fromCharCode(...new Uint8Array(b)));
+const deB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function derivaClave(pass){
+  const mat = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:new TextEncoder().encode('cuentas-de-casa-v1'), iterations:150000, hash:'SHA-256'},
+    mat, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+let claveCache = null;
+async function cifra(texto){
+  if(!yo.clave) return JSON.stringify({v:0, d:texto});
+  claveCache = claveCache || await derivaClave(yo.clave);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, claveCache, new TextEncoder().encode(texto));
+  return JSON.stringify({v:1, iv:b64(iv), ct:b64(ct)});
+}
+async function descifra(bruto){
+  const o = JSON.parse(bruto);
+  if(o.v === 0) return o.d;
+  claveCache = claveCache || await derivaClave(yo.clave);
+  const txt = await crypto.subtle.decrypt({name:'AES-GCM', iv:deB64(o.iv)}, claveCache, deB64(o.ct));
+  return new TextDecoder().decode(txt);
+}
+
+/* ══════════ almacenamiento local ══════════ */
+const RAM = {};
+const local = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return RAM[k] ?? null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){ RAM[k] = v; } }
+};
+
+/* ══════════ sincronización por GitHub ══════════ */
+const RUTA = 'datos/libro.json';
+let shaRemoto = null;
+
+const hayNube = () => !!(yo.repo && yo.token && yo.clave);
+function cabeceras(){
+  return {Authorization:'Bearer '+yo.token, Accept:'application/vnd.github+json',
+          'X-GitHub-Api-Version':'2022-11-28', 'Content-Type':'application/json'};
+}
+const aB64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+const deB64Txt = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')), c=>c.charCodeAt(0)));
+
+function fusiona(a,b){
+  const m = new Map();
+  for(const x of a) m.set(x.id,x);
+  for(const x of b){ const y=m.get(x.id); if(!y || x.upd>y.upd) m.set(x.id,x); }
+  return [...m.values()];
+}
+function guardaLocal(){
+  local.set('cc_movs', JSON.stringify(movs));
+  local.set('cc_aj', JSON.stringify(aj));
+  local.set('cc_yo', JSON.stringify(yo));
+}
+
+async function bajaNube(){
+  const r = await fetch(`https://api.github.com/repos/${yo.repo}/contents/${RUTA}`,
+    {headers: cabeceras(), cache:'no-store'});
+  if(r.status === 404){ shaRemoto = null; return null; }
+  if(!r.ok) throw new Error('GET ' + r.status);
+  const j = await r.json();
+  shaRemoto = j.sha;
+  return JSON.parse(await descifra(deB64Txt(j.content)));
+}
+async function subeNube(payload, intento){
+  const cuerpo = {message:'apuntes ' + new Date().toISOString().slice(0,16).replace('T',' '),
+    content: aB64(await cifra(JSON.stringify(payload)))};
+  if(shaRemoto) cuerpo.sha = shaRemoto;
+  const r = await fetch(`https://api.github.com/repos/${yo.repo}/contents/${RUTA}`,
+    {method:'PUT', headers: cabeceras(), body: JSON.stringify(cuerpo)});
+  if(r.status === 409 || r.status === 422){
+    if(intento) throw new Error('conflicto');
+    await bajaNube(); return subeNube(payload, true);      // alguien escribió antes: releemos y repetimos
+  }
+  if(!r.ok) throw new Error('PUT ' + r.status);
+  shaRemoto = (await r.json()).content.sha;
+}
+
+async function sincroniza(empujar){
+  guardaLocal();
+  if(!hayNube() || sincronizando){ marcaEstado(); return; }
+  sincronizando = true;
+  try{
+    let remoto = null;
+    try{ remoto = await bajaNube(); }
+    catch(e){ if(String(e.message).includes('OperationError') || e.name==='OperationError'){ sincronizando=false; pideClave(); return; } throw e; }
+    const antes = JSON.stringify(movs);
+    if(remoto){
+      movs = fusiona(movs, remoto.movs || []);
+      if(remoto.aj && !empujar) aj = {...AJ_DEF, ...remoto.aj};
+    }
+    const payload = {v:1, aj, movs};
+    if(empujar || !remoto || JSON.stringify(remoto.movs||[]) !== JSON.stringify(movs)) await subeNube(payload, false);
+    guardaLocal();
+    ultimoOk = new Date(); fallo = null;
+    if(antes !== JSON.stringify(movs)){ pintaMes(); pintaLista(); }
+  }catch(e){
+    fallo = String(e.message||e);
+    console.error(e);
+  }
+  sincronizando = false;
+  marcaEstado();
+}
+async function guardaAjustes(){ await sincroniza(true); }
+
+function marcaEstado(){
+  const e = document.getElementById('estado');
+  if(!e) return;
+  if(!hayNube()){ e.innerHTML = '<span class="punto malo"></span>Solo en este teléfono'; return; }
+  e.innerHTML = fallo ? '<span class="punto malo"></span>Sin sincronizar · guardado aquí'
+                      : '<span class="punto"></span>Al día en los dos teléfonos';
+}
+function pideClave(){
+  document.getElementById('portada').classList.remove('oculto');
+  document.getElementById('app').classList.add('oculto');
+  document.getElementById('barra').classList.add('oculto');
+  document.getElementById('pTitulo').textContent = 'Libreta protegida';
+  document.getElementById('pTexto').textContent = 'Escribe la palabra clave que pusisteis al crearla.';
+  document.getElementById('pQuien').classList.add('oculto');
+  document.getElementById('pClave').placeholder = 'Palabra clave';
+  document.getElementById('pEntrar').textContent = 'Abrir libreta';
+}
+
+/* ══════════ portada ══════════ */
+function eligeYo(q){
+  yo.quien = q;
+  document.querySelectorAll('#pQuien button').forEach(b => b.classList.toggle('on', b.dataset.q === q));
+}
+async function entra(){
+  yo.clave = document.getElementById('pClave').value.trim();
+  claveCache = null;
+  guardaLocal();
+  if(hayNube()){
+    try{
+      const remoto = await bajaNube();
+      if(remoto) movs = fusiona(movs, remoto.movs || []);
+    }catch(e){ toast('Esa palabra clave no abre la libreta'); return; }
+  }
+  document.getElementById('portada').classList.add('oculto');
+  document.getElementById('app').classList.remove('oculto');
+  document.getElementById('barra').classList.remove('oculto');
+  quienSel = 'Ambos';
+  pintaMes();
+  sincroniza(true);
+}
+
+/* ══════════ vistas ══════════ */
+function ir(v){
+  document.querySelectorAll('.vista').forEach(s => s.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.getElementById('tb-mes').classList.toggle('act', v==='mes');
+  document.getElementById('tb-lista').classList.toggle('act', v==='lista');
+  window.scrollTo(0,0);
+  if(v==='mes') pintaMes(); if(v==='lista') pintaLista(); if(v==='aj') pintaAjustes();
+}
+function pintaMes(){
+  const k = clave(hoyISO());
+  const mes = activos().filter(m => clave(m.fecha) === k);
+  const suma = f => mes.filter(f).reduce((a,m)=>a+m.importe,0);
+  const ing = suma(m => m.importe > 0);
+  const nec = -suma(m => BLOQUE[m.categoria]==='Necesidades');
+  const est = -suma(m => BLOQUE[m.categoria]==='Estilo de vida');
+  const apo = -suma(m => BLOQUE[m.categoria]==='Ahorro e inversión');
+  const neto = mes.reduce((a,m)=>a+m.importe,0);
+  const saldo = aj.saldo + activos().reduce((a,m)=>a+m.importe,0);
+  const [y,mm] = k.split('-');
+  document.getElementById('etMes').innerHTML = '<b>'+MESES[+mm-1]+'</b> '+y;
+  animaSaldo(saldo);
+  document.getElementById('elDelta').innerHTML =
+    (mes.length ? '<i class="'+(neto>=0?'up':'down')+'">'+(neto>=0?'▲ ':'▼ ')+eur0(Math.abs(neto))+'</i> este mes · '+mes.length+' apunte'+(mes.length===1?'':'s')
+                : 'Sin movimientos todavía este mes') +
+    ' <span class="enlinea" id="estado"><span class="punto"></span>Al día en los dos teléfonos</span>';
+  marcaEstado(ultimoOk !== null);
+
+  const base = ing > 0 ? ing : 0;
+  const barra = (et, val, pct, color, esAhorro) => {
+    const obj = base*pct/100, ancho = base>0 ? Math.min(100, val/base*100) : 0;
+    const mal = base>0 && (esAhorro ? val < obj*0.98 : val > obj);
+    return `<div class="fila"><div class="et">${et}</div>
+      <div class="ci" style="color:${mal?'var(--coral)':'var(--texto)'}">${eur0(val)}${base>0?' <span style="color:var(--tenue);font-weight:500"> de '+eur0(obj)+'</span>':''}</div>
+      <div class="barra"><span style="width:${ancho}%;background:${color}"></span>${base>0?'<i class="tope" style="left:'+pct+'%"></i>':''}</div></div>`;
+  };
+  document.getElementById('elPlan').innerHTML = (base>0 || mes.length)
+    ? barra('Necesidades', nec, aj.nec, 'var(--coral)', false)
+      + barra('Estilo de vida', est, aj.est, 'var(--ambar)', false)
+      + barra('Ahorro apartado', apo, aj.aho, 'var(--verde)', true)
+      + `<div class="fila" style="border-top:1px solid var(--linea);padding-top:11px"><div class="et">Ingresos del mes</div><div class="ci up">${eur0(ing)}</div></div>`
+    : '<div style="color:var(--tenue);font-size:13.5px;text-align:center;padding:6px 0">Cuando entre la primera nómina del mes verás aquí el reparto 50 / 15 / 35.</div>';
+
+  const hoy = activos().filter(m => m.fecha === hoyISO())
+    .sort((a,b) => b.upd.localeCompare(a.upd));
+  document.getElementById('elHoy').innerHTML = hoy.length
+    ? '<div class="dia">Hoy</div>' + hoy.map(ficha).join('')
+    : '<div class="vacio">Nada apuntado hoy.<br>Toca el + en cuanto pagues algo.</div>';
+}
+function animaSaldo(v){
+  const el = document.getElementById('elSaldo');
+  const pinta = n => el.innerHTML = eur0(n).replace(' €','') + '<small>€</small>';
+  if(saldoPintado===null || Math.abs(v-saldoPintado)<1 || matchMedia('(prefers-reduced-motion: reduce)').matches){
+    pinta(v); saldoPintado = v; return; }
+  const de = saldoPintado, ini = performance.now();
+  const paso = t => { const p = Math.min(1,(t-ini)/520), e = 1-Math.pow(1-p,3);
+    pinta(de+(v-de)*e); if(p<1) requestAnimationFrame(paso); else saldoPintado = v; };
+  requestAnimationFrame(paso);
+}
+function ficha(m){
+  return `<div class="mv" onclick="abre('${m.id}')"><div><div class="c">${esc(m.desc||m.categoria)}</div>
+    <div class="s">${m.categoria} · ${m.quien}</div></div>
+    <div class="i" style="color:${m.importe>=0?'var(--verde)':'var(--texto)'}">${eur(m.importe)}</div></div>`;
+}
+function pintaLista(){
+  const b = document.getElementById('busca');
+  if(!b) return;
+  const q = (b.value||'').toLowerCase().trim();
+  const l = activos().filter(m => !q || (m.desc||'').toLowerCase().includes(q) || m.categoria.toLowerCase().includes(q))
+    .sort((a,b) => b.fecha.localeCompare(a.fecha) || b.upd.localeCompare(a.upd));
+  const c = document.getElementById('elLista');
+  if(!l.length){ c.innerHTML = '<div class="vacio">'+(q?'Ningún movimiento con «'+esc(q)+'».':'Todavía no habéis apuntado nada.')+'</div>'; return; }
+  let h='', ult='';
+  for(const m of l){ if(m.fecha!==ult){ h+='<div class="dia">'+etiqueta(m.fecha)+'</div>'; ult=m.fecha; } h+=ficha(m); }
+  c.innerHTML = h;
+}
+function etiqueta(f){
+  if(f===hoyISO()) return 'Hoy';
+  const ayer = new Date(Date.now()-864e5-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  if(f===ayer) return 'Ayer';
+  return new Date(f+'T12:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+}
+
+/* ══════════ entrada ══════════ */
+function abre(id){
+  editando = id ? movs.find(m => m.id===id) : null;
+  document.getElementById('hChips').innerHTML = CATS.map(([c]) =>
+    `<button class="chip" data-c="${c}" onclick="setCat('${c}')">${c}</button>`).join('');
+  if(editando){
+    signo = editando.importe>=0 ? 1 : -1;
+    buffer = Math.abs(editando.importe).toFixed(2).replace('.','');
+    catSel = editando.categoria; quienSel = editando.quien;
+    document.getElementById('hDesc').value = editando.desc||'';
+    document.getElementById('hFecha').value = editando.fecha;
+    document.getElementById('hBorrar').style.display = 'block';
+  }else{
+    signo=-1; buffer=''; catSel='Comida'; quienSel=yo.quien==='Ambos'?'Ambos':'Ambos';
+    document.getElementById('hDesc').value='';
+    document.getElementById('hFecha').value = hoyISO();
+    document.getElementById('hBorrar').style.display='none';
+  }
+  setSigno(signo); setCat(catSel); setQuien(quienSel); refImp();
+  document.getElementById('velo').classList.add('on');
+  document.getElementById('hoja').classList.add('on');
+}
+function cierra(){
+  document.getElementById('velo').classList.remove('on');
+  document.getElementById('hoja').classList.remove('on');
+  document.activeElement && document.activeElement.blur();
+}
+function setSigno(s){
+  signo = s;
+  document.getElementById('bGasto').className = s<0?'on':'';
+  document.getElementById('bIng').className = s>0?'on ing':'';
+  if(s>0 && BLOQUE[catSel]!=='Ingreso') setCat('Ingreso');
+  if(s<0 && catSel==='Ingreso') setCat('Comida');
+  document.getElementById('hGuardar').style.background = s>0?'var(--verde)':'var(--coral)';
+  refImp();
+}
+function setCat(c){
+  catSel = c;
+  document.querySelectorAll('#hChips .chip').forEach(b => {
+    const act = b.dataset.c===c; b.classList.toggle('on', act);
+    if(act) b.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+  });
+  if(c==='Ingreso' && signo<0) setSigno(1);
+}
+function setQuien(q){
+  quienSel = q;
+  document.querySelectorAll('.quien button').forEach(b => b.classList.toggle('on', b.dataset.q===q));
+}
+function tec(t){
+  if(t==='b') buffer = buffer.slice(0,-1);
+  else if(buffer.length + t.length <= 8) buffer += t;
+  refImp();
+}
+const valor = () => buffer ? parseInt(buffer,10)/100 : 0;
+function refImp(){
+  const v = valor(), el = document.getElementById('hImp');
+  el.textContent = (signo<0 && v>0?'−':'') + v.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+  el.style.color = v===0 ? 'var(--tenue)' : (signo>0?'var(--verde)':'var(--texto)');
+  document.getElementById('hGuardar').disabled = v===0;
+}
+async function guarda(){
+  const v = valor(); if(!v) return;
+  const reg = {id: editando?editando.id:uid(),
+    fecha: document.getElementById('hFecha').value||hoyISO(), quien: quienSel,
+    importe: +(signo*v).toFixed(2), categoria: catSel,
+    desc: document.getElementById('hDesc').value.trim(),
+    extra: editando?!!editando.extra:false, del:false,
+    apunta: yo.quien, upd: new Date().toISOString()};
+  if(editando) movs[movs.findIndex(m=>m.id===reg.id)] = reg; else movs.push(reg);
+  cierra(); pintaMes(); ir('mes');
+  toast(editando ? 'Movimiento actualizado' : eur(reg.importe)+' apuntado');
+  await sincroniza(true);
+}
+async function elimina(){
+  if(!editando) return;
+  editando.del = true; editando.upd = new Date().toISOString();
+  cierra(); pintaMes(); pintaLista(); toast('Movimiento borrado');
+  await sincroniza(true);
+}
+
+/* ══════════ ajustes ══════════ */
+function pintaAjustes(){
+  const g = id => document.getElementById(id);
+  g('cfgYo').value = yo.quien; g('cfgSaldo').value = aj.saldo;
+  g('cfgNec').value = aj.nec; g('cfgEst').value = aj.est; g('cfgAho').value = aj.aho;
+  const s = (+aj.nec)+(+aj.est)+(+aj.aho);
+  g('cfgSuma').textContent = s===100 ? 'Suma 100 %. Correcto.' : 'Ahora suman '+s+' %. Deberían sumar 100.';
+  g('cfgSuma').style.color = s===100 ? 'var(--verde)' : 'var(--ambar)';
+  g('cfgRepo').value = yo.repo; g('cfgToken').value = yo.token;
+  g('hSync').textContent = !hayNube()
+    ? 'Falta el repositorio, el token o la palabra clave'
+    : (fallo ? 'Último intento falló: ' + fallo
+             : (ultimoOk ? 'Al día · ' + ultimoOk.toLocaleTimeString('es-ES') : 'Sin sincronizar todavía'));
+  const n = activos().filter(m => !yo.ultimoExport || m.upd > yo.ultimoExport).length;
+  g('ctNuevo').textContent = n + (n===1?' movimiento sin llevar al Excel':' movimientos sin llevar al Excel');
+  g('ctTodo').textContent = activos().length + ' movimientos en la libreta';
+}
+const MAPA = {cfgSaldo:'saldo', cfgNec:'nec', cfgEst:'est', cfgAho:'aho'};
+for(const id in MAPA){
+  document.getElementById(id).addEventListener('change', async e => {
+    aj[MAPA[id]] = parseFloat(String(e.target.value).replace(',','.')) || 0;
+    saldoPintado = null; pintaMes(); pintaAjustes(); sincroniza(true);
+  });
+}
+document.getElementById('cfgYo').addEventListener('change', e => { yo.quien = e.target.value; guardaLocal(); toast('Guardado'); });
+for(const [id,k] of [['cfgRepo','repo'],['cfgToken','token']]){
+  document.getElementById(id).addEventListener('change', e => {
+    yo[k] = e.target.value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/$/,'');
+    guardaLocal(); shaRemoto = null; pintaAjustes();
+  });
+}
+async function pruebaNube(){
+  if(!yo.repo || !yo.token){ toast('Faltan el repositorio o el token'); return; }
+  if(!yo.clave){ toast('Pon primero una palabra clave'); return; }
+  document.getElementById('hSync').textContent = 'Probando…';
+  await sincroniza(true);
+  pintaAjustes();
+  toast(fallo ? 'No ha podido: ' + fallo : 'Conectado. Los dos móviles ya comparten libreta');
+}
+
+/* ══════════ salida al Excel ══════════ */
+let pendienteExport = [];
+function prepara(todo){
+  pendienteExport = activos()
+    .filter(m => todo || !yo.ultimoExport || m.upd > yo.ultimoExport)
+    .sort((a,b) => a.fecha.localeCompare(b.fecha));
+  if(!pendienteExport.length){ toast('No hay nada nuevo que llevar'); return; }
+  const filas = [['Fecha','Quién','Importe','Categoría','Descripción','Extraordinario']];
+  for(const m of pendienteExport){
+    const [y,mo,d] = m.fecha.split('-');
+    filas.push([`${d}/${mo}/${y}`, m.quien, m.importe.toFixed(2).replace('.',','),
+      m.categoria, (m.desc||'').replace(/\t/g,' '), m.extra?'Sí':'No']);
+  }
+  document.getElementById('csv').value = filas.map(f => f.join('\t')).join('\n');
+  document.getElementById('zonaCsv').classList.remove('oculto');
+  toast(pendienteExport.length + ' movimientos listos');
+}
+async function copia(){
+  const t = document.getElementById('csv');
+  try{ await navigator.clipboard.writeText(t.value); toast('Copiado. Pégalo en la hoja Movimientos'); }
+  catch(e){ t.select(); document.execCommand && document.execCommand('copy');
+    toast('Selecciónalo y cópialo a mano'); }
+}
+async function marcaExportado(){
+  yo.ultimoExport = new Date().toISOString();
+  guardaLocal(); pintaAjustes();
+  document.getElementById('zonaCsv').classList.add('oculto');
+  toast('Marcado. La próxima vez solo saldrá lo nuevo');
+}
+async function vacia(){
+  if(!confirm('Se borran los apuntes de la libreta, también en el otro teléfono. ¿Seguro?')) return;
+  movs = []; yo.ultimoExport = null;
+  await sincroniza(true);
+  saldoPintado = null; pintaMes(); pintaLista(); pintaAjustes(); toast('Libreta vacía');
+}
+
+/* ══════════ arranque ══════════ */
+document.getElementById('hoja').addEventListener('click', e => e.stopPropagation());
+document.addEventListener('keydown', e => { if(e.key==='Escape') cierra(); });
+document.addEventListener('visibilitychange', () => { if(!document.hidden) sincroniza(false); });
+setInterval(() => { if(!document.hidden && !document.getElementById('app').classList.contains('oculto')) sincroniza(false); }, 45000);
+
+(async () => {
+  try{
+    const a = local.get('cc_yo');   if(a) yo  = {...yo, ...JSON.parse(a)};
+    const b = local.get('cc_aj');   if(b) aj  = {...AJ_DEF, ...JSON.parse(b)};
+    const c = local.get('cc_movs'); if(c) movs = JSON.parse(c);
+  }catch(e){}
+  if(yo.clave || movs.length){
+    document.getElementById('portada').classList.add('oculto');
+    document.getElementById('app').classList.remove('oculto');
+    document.getElementById('barra').classList.remove('oculto');
+    pintaMes();
+    sincroniza(false);
+  }else{
+    eligeYo(yo.quien);
+  }
+})();
+if('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
