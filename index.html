@@ -248,6 +248,11 @@ input,select,textarea{font:inherit;color:inherit}
     <div class="aj"><label>Ahorro e inversión</label><input id="cfgAho" inputmode="decimal"></div>
     <div class="aj"><div class="h" id="cfgSuma"></div></div>
 
+    <div class="sec">Traer el histórico</div>
+    <button class="accion" onclick="document.getElementById('fichero').click()">Importar desde un archivo
+      <span id="ctImp"></span></button>
+    <input type="file" id="fichero" accept=".json,.csv,application/json,text/csv" style="display:none" onchange="importa(this)">
+
     <div class="sec">Llevarlo al Excel</div>
     <button class="accion" onclick="prepara(false)">Preparar lo nuevo <span id="ctNuevo"></span></button>
     <button class="accion" onclick="prepara(true)">Preparar todo <span id="ctTodo"></span></button>
@@ -313,8 +318,8 @@ const CATS = [
   ['Aportación inversión','Ahorro e inversión'],['Aportación proyecto','Ahorro e inversión'],
   ['Aportación colchón','Ahorro e inversión']
 ];
-const BLOQUE = Object.fromEntries(CATS);
-const AJ_DEF = {saldo:74487.83, nec:50, est:15, aho:35};
+const BLOQUE = new Proxy(Object.fromEntries(CATS), {get:(t,k)=> t[k] || 'Estilo de vida'});
+const AJ_DEF = {saldo:74487.83, nec:50, est:15, aho:35, upd:''};
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
 let movs = [], aj = {...AJ_DEF}, yo = {quien:'Ambos', clave:'', ultimoExport:null};
@@ -333,8 +338,23 @@ function toast(t){ const a=document.getElementById('aviso'); a.textContent=t; a.
   clearTimeout(a._t); a._t=setTimeout(()=>a.classList.remove('on'),2300); }
 
 /* ══════════ cifrado opcional ══════════ */
-const b64 = b => btoa(String.fromCharCode(...new Uint8Array(b)));
+function b64(buf){
+  const a = new Uint8Array(buf); let s = '';
+  for(let i=0; i<a.length; i+=8192) s += String.fromCharCode.apply(null, a.subarray(i,i+8192));
+  return btoa(s);
+}
 const deB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const HAY_GZIP = typeof CompressionStream !== 'undefined';
+async function comprime(txt){
+  const cs = new CompressionStream('gzip'), w = cs.writable.getWriter();
+  w.write(new TextEncoder().encode(txt)); w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function descomprime(buf){
+  const ds = new DecompressionStream('gzip'), w = ds.writable.getWriter();
+  w.write(buf); w.close();
+  return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer());
+}
 async function derivaClave(pass){
   const mat = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
@@ -343,18 +363,20 @@ async function derivaClave(pass){
 }
 let claveCache = null;
 async function cifra(texto){
-  if(!yo.clave) return JSON.stringify({v:0, d:texto});
+  const datos = HAY_GZIP ? await comprime(texto) : new TextEncoder().encode(texto);
+  if(!yo.clave) return JSON.stringify({v: HAY_GZIP?20:0, d: HAY_GZIP ? b64(datos) : texto});
   claveCache = claveCache || await derivaClave(yo.clave);
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, claveCache, new TextEncoder().encode(texto));
-  return JSON.stringify({v:1, iv:b64(iv), ct:b64(ct)});
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, claveCache, datos);
+  return JSON.stringify({v: HAY_GZIP?2:1, iv:b64(iv), ct:b64(ct)});
 }
 async function descifra(bruto){
   const o = JSON.parse(bruto);
-  if(o.v === 0) return o.d;
+  if(o.v === 0)  return o.d;
+  if(o.v === 20) return descomprime(deB64(o.d));
   claveCache = claveCache || await derivaClave(yo.clave);
-  const txt = await crypto.subtle.decrypt({name:'AES-GCM', iv:deB64(o.iv)}, claveCache, deB64(o.ct));
-  return new TextDecoder().decode(txt);
+  const bin = await crypto.subtle.decrypt({name:'AES-GCM', iv:deB64(o.iv)}, claveCache, deB64(o.ct));
+  return o.v === 2 ? descomprime(new Uint8Array(bin)) : new TextDecoder().decode(bin);
 }
 
 /* ══════════ almacenamiento local ══════════ */
@@ -373,7 +395,7 @@ function cabeceras(){
   return {Authorization:'Bearer '+yo.token, Accept:'application/vnd.github+json',
           'X-GitHub-Api-Version':'2022-11-28', 'Content-Type':'application/json'};
 }
-const aB64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+const aB64 = s => b64(new TextEncoder().encode(s));
 const deB64Txt = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')), c=>c.charCodeAt(0)));
 
 function fusiona(a,b){
@@ -422,7 +444,7 @@ async function sincroniza(empujar){
     const antes = JSON.stringify(movs);
     if(remoto){
       movs = fusiona(movs, remoto.movs || []);
-      if(remoto.aj && !empujar) aj = {...AJ_DEF, ...remoto.aj};
+      if(remoto.aj && (remoto.aj.upd||'') > (aj.upd||'')) aj = {...AJ_DEF, ...remoto.aj};
     }
     const payload = {v:1, aj, movs};
     if(empujar || !remoto || JSON.stringify(remoto.movs||[]) !== JSON.stringify(movs)) await subeNube(payload, false);
@@ -468,7 +490,10 @@ async function entra(){
   if(hayNube()){
     try{
       const remoto = await bajaNube();
-      if(remoto) movs = fusiona(movs, remoto.movs || []);
+      if(remoto){
+        movs = fusiona(movs, remoto.movs || []);
+        if(remoto.aj && (remoto.aj.upd||'') > (aj.upd||'')) aj = {...AJ_DEF, ...remoto.aj};
+      }
     }catch(e){ toast('Esa palabra clave no abre la libreta'); return; }
   }
   document.getElementById('portada').classList.add('oculto');
@@ -559,7 +584,7 @@ function animaSaldo(v){
 }
 function ficha(m){
   return `<div class="mv" onclick="abre('${m.id}')"><div><div class="c">${esc(m.desc||m.categoria)}</div>
-    <div class="s">${m.categoria} · ${m.quien}</div></div>
+    <div class="s">${m.categoria} · ${m.quien}${m.extra?' · extraordinario':''}</div></div>
     <div class="i" style="color:${m.importe>=0?'var(--verde)':'var(--texto)'}">${eur(m.importe)}</div></div>`;
 }
 function pintaLista(){
@@ -570,8 +595,10 @@ function pintaLista(){
     .sort((a,b) => b.fecha.localeCompare(a.fecha) || b.upd.localeCompare(a.upd));
   const c = document.getElementById('elLista');
   if(!l.length){ c.innerHTML = '<div class="vacio">'+(q?'Ningún movimiento con «'+esc(q)+'».':'Todavía no habéis apuntado nada.')+'</div>'; return; }
+  const TOPE = 300, corta = l.length > TOPE;
   let h='', ult='';
-  for(const m of l){ if(m.fecha!==ult){ h+='<div class="dia">'+etiqueta(m.fecha)+'</div>'; ult=m.fecha; } h+=ficha(m); }
+  for(const m of l.slice(0,TOPE)){ if(m.fecha!==ult){ h+='<div class="dia">'+etiqueta(m.fecha)+'</div>'; ult=m.fecha; } h+=ficha(m); }
+  if(corta) h += '<div class="vacio">Mostrando los '+TOPE+' más recientes de '+l.length.toLocaleString('es-ES')+'.<br>Busca por concepto o categoría para afinar.</div>';
   c.innerHTML = h;
 }
 function etiqueta(f){
@@ -603,9 +630,11 @@ function setBloque(b){ fBloque = b; rellenaFiltros(); pintaResumen(); }
 function pintaResumen(){
   if(!document.getElementById('fAnio').options.length) rellenaFiltros();
   const y = document.getElementById('fAnio').value, mo = document.getElementById('fMes').value;
-  let l = activos();
-  if(y) l = l.filter(m => m.fecha.slice(0,4) === y);
-  if(mo) l = l.filter(m => m.fecha.slice(5,7) === mo);
+  let todo = activos();
+  if(y) todo = todo.filter(m => m.fecha.slice(0,4) === y);
+  if(mo) todo = todo.filter(m => m.fecha.slice(5,7) === mo);
+  const l = todo.filter(m => !m.extra);            // el ritmo normal de la casa
+  const extraord = todo.filter(m => m.extra).reduce((a,m)=>a+m.importe,0);
 
   const suma = (arr,f) => arr.filter(f).reduce((a,m)=>a+m.importe,0);
   const ing = suma(l, m => BLOQUE[m.categoria]==='Ingreso');
@@ -624,6 +653,9 @@ function pintaResumen(){
       <div class="tarj"><div class="et">Gastos</div><div class="va">${eur0(gas)}</div></div>
       <div class="tarj"><div class="et">Apartado a ahorro</div><div class="va">${eur0(apo)}</div></div>
       <div class="tarj"><div class="et">Gasto medio al mes</div><div class="va">${eur0(gas/nMeses)}</div></div>
+      ${extraord ? `<div class="tarj ancha"><div><div class="et">Operaciones extraordinarias</div>
+        <div class="va" style="font-size:20px;color:${extraord>=0?'var(--verde)':'var(--coral)'}">${eur0(extraord)}</div></div>
+        <div class="et" style="max-width:46%;text-align:right;line-height:1.35">Fuera de las cifras de arriba para que no falseen las medias</div></div>` : ''}
     </div>`;
 
   // ── evolución mes a mes ──
@@ -631,7 +663,7 @@ function pintaResumen(){
   let ventana = y ? claves.filter(k => k.slice(0,4)===y) : claves.slice(-12);
   if(mo) ventana = ventana.filter(k => k.slice(5,7)===mo);
   const serie = ventana.map(k => {
-    const mm = activos().filter(x => clave(x.fecha)===k);
+    const mm = activos().filter(x => clave(x.fecha)===k && !x.extra);
     return {k, v: mm.reduce((a,x)=>a+x.importe,0)};
   });
   const g = document.getElementById('rGrafico');
@@ -768,6 +800,9 @@ function pintaAjustes(){
     ? 'Falta el repositorio, el token o la palabra clave'
     : (fallo ? 'Último intento falló: ' + fallo
              : (ultimoOk ? 'Al día · ' + ultimoOk.toLocaleTimeString('es-ES') : 'Sin sincronizar todavía'));
+  g('ctImp').textContent = activos().length
+    ? activos().length.toLocaleString('es-ES') + ' movimientos en la libreta'
+    : 'La libreta está vacía';
   const n = activos().filter(m => !yo.ultimoExport || m.upd > yo.ultimoExport).length;
   g('ctNuevo').textContent = n + (n===1?' movimiento sin llevar al Excel':' movimientos sin llevar al Excel');
   g('ctTodo').textContent = activos().length + ' movimientos en la libreta';
@@ -776,6 +811,7 @@ const MAPA = {cfgSaldo:'saldo', cfgNec:'nec', cfgEst:'est', cfgAho:'aho'};
 for(const id in MAPA){
   document.getElementById(id).addEventListener('change', async e => {
     aj[MAPA[id]] = parseFloat(String(e.target.value).replace(',','.')) || 0;
+    aj.upd = new Date().toISOString();
     saldoPintado = null; pintaMes(); pintaAjustes(); sincroniza(true);
   });
 }
@@ -793,6 +829,45 @@ async function pruebaNube(){
   await sincroniza(true);
   pintaAjustes();
   toast(fallo ? 'No ha podido: ' + fallo : 'Conectado. Los dos móviles ya comparten libreta');
+}
+
+/* ══════════ entrada del histórico ══════════ */
+function importa(inp){
+  const f = inp.files[0]; if(!f) return;
+  const lector = new FileReader();
+  lector.onload = async () => {
+    let nuevos = [], saldo = null;
+    try{
+      if(f.name.toLowerCase().endsWith('.json')){
+        const o = JSON.parse(lector.result);
+        nuevos = o.movs || o;
+        if(typeof o.saldo === 'number') saldo = o.saldo;
+      }else{
+        const lineas = String(lector.result).replace(/^\ufeff/,'').split(/\r?\n/).filter(l => l.trim());
+        for(const l of lineas.slice(1)){
+          const c = l.split(/[;\t]/);
+          if(c.length < 4) continue;
+          const [d,mo,y] = c[0].trim().split(/[\/\-]/);
+          const imp = parseFloat(String(c[2]).replace(/\./g,'').replace(',','.'));
+          if(!y || isNaN(imp)) continue;
+          nuevos.push({id: uid(), fecha:`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`,
+            quien:(c[1]||'Ambos').trim(), importe:imp, categoria:(c[3]||'Otros').trim(),
+            desc:(c[4]||'').trim(), extra:(c[5]||'').trim()==='Sí', del:false, upd:new Date().toISOString()});
+        }
+      }
+    }catch(e){ toast('No he podido leer ese archivo'); return; }
+    if(!nuevos.length){ toast('El archivo no tiene movimientos'); return; }
+    toast('Importando ' + nuevos.length.toLocaleString('es-ES') + ' movimientos…');
+    const antes = movs.length;
+    movs = fusiona(movs, nuevos);
+    if(saldo !== null){ aj.saldo = saldo; aj.upd = new Date().toISOString(); }
+    saldoPintado = null;
+    toast((movs.length - antes).toLocaleString('es-ES') + ' movimientos importados');
+    await sincroniza(true);
+    pintaMes(); pintaLista(); pintaAjustes();
+  };
+  lector.readAsText(f, 'utf-8');
+  inp.value = '';
 }
 
 /* ══════════ salida al Excel ══════════ */
